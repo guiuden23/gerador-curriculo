@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import type { PlanId } from "@/config/plans";
+import { SKIP_PAYMENT_GATE } from "@/config/dev";
 import { loadSelectedPlan, saveSelectedPlan } from "@/lib/storage/plan-storage";
 import { isPaymentVerified } from "@/lib/storage/payment-storage";
 import { usePaymentContext } from "@/contexts/payment-context";
@@ -49,8 +50,11 @@ export function AppFlowProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const canAccessEditor = useMemo(
-    () => Boolean(selectedPlanId && isPaymentVerified(selectedPlanId)),
-    // paymentStatus dispara recomputo após markApproved (sessionStorage sozinho não re-renderiza).
+    () =>
+      Boolean(
+        selectedPlanId &&
+          (SKIP_PAYMENT_GATE || isPaymentVerified(selectedPlanId))
+      ),
     [selectedPlanId, paymentStatus]
   );
 

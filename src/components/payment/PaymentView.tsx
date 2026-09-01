@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getPlan, type PlanId } from "@/config/plans";
+import { SKIP_PAYMENT_GATE } from "@/config/dev";
 import { useResume } from "@/hooks/use-resume";
 import { usePayment } from "@/hooks/use-payment";
 import { Field } from "@/components/ui/Field";
@@ -109,6 +110,24 @@ export function PaymentView({
     setStatus("error");
   };
 
+  const skipToEditor = useCallback(() => {
+    markApproved(planId, 0);
+    onSuccess();
+  }, [markApproved, onSuccess, planId]);
+
+  useEffect(() => {
+    if (!SKIP_PAYMENT_GATE) return;
+    if (status !== "error" && status !== "rejected") return;
+    const timer = setTimeout(skipToEditor, 1200);
+    return () => clearTimeout(timer);
+  }, [status, skipToEditor]);
+
+  const devSkipButton = SKIP_PAYMENT_GATE ? (
+    <Button variant="ghost" onClick={skipToEditor} className="mt-4 w-full border border-dashed border-amber-500/60 text-amber-800 dark:text-amber-300">
+      Pular pagamento (modo teste) → testar editor e PDF
+    </Button>
+  ) : null;
+
   return (
     <FlowPageLayout
       backLabel="Voltar aos planos"
@@ -158,6 +177,7 @@ export function PaymentView({
               Informe um e-mail válido para liberar o formulário de cartão.
             </AlertBanner>
           )}
+          {devSkipButton}
         </Card>
       )}
 
@@ -175,6 +195,7 @@ export function PaymentView({
               setStatus("error");
             }}
           />
+          {devSkipButton}
         </Card>
       )}
 
@@ -182,10 +203,16 @@ export function PaymentView({
         <div className="mx-auto max-w-md">
           <AlertBanner variant="error" className="mb-4">
             Pagamento não aprovado. Tente novamente.
+            {SKIP_PAYMENT_GATE && (
+              <span className="mt-2 block text-sm">
+                Modo teste ativo — redirecionando para o editor em instantes…
+              </span>
+            )}
           </AlertBanner>
           <Button onClick={reset} className="w-full">
             Tentar novamente
           </Button>
+          {devSkipButton}
         </div>
       )}
 
@@ -209,10 +236,16 @@ export function PaymentView({
               : errorMessage
                 ? errorMessage
                 : "Ocorreu um erro ao processar o pagamento. Tente novamente em instantes."}
+            {SKIP_PAYMENT_GATE && (
+              <p className="mt-3 text-sm font-normal opacity-90">
+                Modo teste ativo — redirecionando para o editor em instantes…
+              </p>
+            )}
           </AlertBanner>
           <Button onClick={reset} className="mt-4 w-full">
             Tentar novamente
           </Button>
+          {devSkipButton}
         </div>
       )}
     </FlowPageLayout>
