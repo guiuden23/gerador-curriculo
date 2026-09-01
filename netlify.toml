@@ -2,6 +2,9 @@
 # Sem isso, o Netlify publica só arquivos estáticos e a raiz retorna 404.
 [build]
   command = "yarn build"
+  # Sobrescreve "Publish directory" = raiz do repo no painel Netlify (que quebra o plugin).
+  # O @netlify/plugin-nextjs gerencia o deploy; este valor só precisa ser != base directory.
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "20.20.2"
