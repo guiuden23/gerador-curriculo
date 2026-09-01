@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Agent, fetch as undiciFetch } from "undici";
+import { serverFetch } from "@/lib/server-fetch";
 
 // Permite apenas origens do Mercado Pago / Mercado Livre (evita SSRF).
 function isAllowedHost(host: string): boolean {
@@ -9,8 +9,6 @@ function isAllowedHost(host: string): boolean {
     host.endsWith(".mlstatic.com")
   );
 }
-
-const MP_AGENT = new Agent({ connect: { rejectUnauthorized: false } });
 
 // Proxy de origem: serve qualquer recurso estático do Mercado Pago a partir do
 // nosso próprio domínio. A SDK é carregada de
@@ -36,13 +34,12 @@ export async function GET(
   const target = `https://${host}${path}${req.nextUrl.search}`;
 
   try {
-    const res = await undiciFetch(target, {
+    const res = await serverFetch(target, {
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; eCurriculoDigital/1.0)",
         Accept: "*/*",
         Referer: "https://www.mercadopago.com/",
       },
-      dispatcher: MP_AGENT,
     });
 
     const body = await res.arrayBuffer();

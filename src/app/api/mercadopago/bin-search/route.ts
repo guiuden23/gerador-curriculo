@@ -1,9 +1,5 @@
 import { NextResponse } from "next/server";
-import { Agent, fetch as undiciFetch } from "undici";
-
-// Ambiente corporativo com proxy que intercepta HTTPS (certificado próprio):
-// usamos um agente que não valida a cadeia de certificados apenas para a Mercado Pago.
-const MP_AGENT = new Agent({ connect: { rejectUnauthorized: false } });
+import { serverFetch } from "@/lib/server-fetch";
 
 const ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
 const PUBLIC_KEY =
@@ -66,14 +62,13 @@ export async function GET(request: Request) {
   params.set("public_key", url.searchParams.get("public_key") || PUBLIC_KEY);
 
   try {
-    const res = await undiciFetch(
+    const res = await serverFetch(
       `https://api.mercadopago.com/v1/payment_methods/search?${params.toString()}`,
       {
         headers: {
           Authorization: `Bearer ${ACCESS_TOKEN}`,
           "Content-Type": "application/json",
         },
-        dispatcher: MP_AGENT,
       }
     );
 

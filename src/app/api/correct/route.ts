@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import type { ResumeData } from "@/lib/types";
 import { localCorrect, type Correction } from "@/lib/corrections";
-import { Agent, fetch as undiciFetch } from "undici";
-
-// Ambiente corporativo com proxy que intercepta HTTPS (certificado próprio):
-// usamos um agente que não valida a cadeia de certificados apenas para a OpenAI.
-const OPENAI_AGENT = new Agent({ connect: { rejectUnauthorized: false } });
+import { serverFetch } from "@/lib/server-fetch";
 
 function buildPrompt(data: ResumeData): string {
   return `Você é um especialista em currículos e otimização ATS. Corrija e otimize AUTOMATICAMENTE todo o currículo abaixo, mantendo TODOS os fatos originais (não invente nada).
@@ -63,7 +59,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const res = await undiciFetch(
+    const res = await serverFetch(
       "https://api.openai.com/v1/chat/completions",
       {
         method: "POST",
@@ -84,7 +80,6 @@ export async function POST(request: Request) {
           temperature: 0.5,
           response_format: { type: "json_object" },
         }),
-        dispatcher: OPENAI_AGENT,
       }
     );
 

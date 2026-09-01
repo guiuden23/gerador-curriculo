@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import type { ResumeData } from "@/lib/types";
-import { Agent, fetch as undiciFetch } from "undici";
-
-// Ambiente corporativo com proxy que intercepta HTTPS (certificado próprio):
-// usamos um agente que não valida a cadeia de certificados apenas para a OpenAI.
-const OPENAI_AGENT = new Agent({ connect: { rejectUnauthorized: false } });
+import { serverFetch } from "@/lib/server-fetch";
 
 function buildPrompt(data: ResumeData): string {
   return `Escreva uma carta de apresentação profissional em português (Brasil), formal e persuasiva, com no máximo 4 parágrafos.
@@ -63,7 +59,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const res = await undiciFetch(
+    const res = await serverFetch(
       "https://api.openai.com/v1/chat/completions",
       {
         method: "POST",
@@ -83,7 +79,6 @@ export async function POST(request: Request) {
           ],
           temperature: 0.7,
         }),
-        dispatcher: OPENAI_AGENT,
       }
     );
 

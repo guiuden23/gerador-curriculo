@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { Agent, fetch as undiciFetch } from "undici";
+import { serverFetch } from "@/lib/server-fetch";
 import { setPaymentStatus } from "@/lib/payment-status-cache";
 
-const MP_AGENT = new Agent({ connect: { rejectUnauthorized: false } });
 const ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN;
 
 // Configure esta URL (https://SEU_DOMINIO/api/webhooks/mercadopago) nas
@@ -47,10 +46,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const res = await undiciFetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+    const res = await serverFetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
-      dispatcher: MP_AGENT,
     });
     const body = (await res.json()) as { status?: string; status_detail?: string };
     if (res.ok && body.status) {
