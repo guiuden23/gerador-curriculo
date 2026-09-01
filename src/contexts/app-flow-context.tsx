@@ -11,6 +11,7 @@ import {
 import type { PlanId } from "@/config/plans";
 import { loadSelectedPlan, saveSelectedPlan } from "@/lib/storage/plan-storage";
 import { isPaymentVerified } from "@/lib/storage/payment-storage";
+import { usePaymentContext } from "@/contexts/payment-context";
 
 export type AppView = "landing" | "plans" | "payment" | "basic";
 
@@ -31,6 +32,7 @@ function resolveInitialPlan(): PlanId | null {
 }
 
 export function AppFlowProvider({ children }: { children: ReactNode }) {
+  const { status: paymentStatus } = usePaymentContext();
   const [view, setView] = useState<AppView>("landing");
   const [selectedPlanId, setSelectedPlanId] = useState<PlanId | null>(resolveInitialPlan);
 
@@ -48,7 +50,8 @@ export function AppFlowProvider({ children }: { children: ReactNode }) {
 
   const canAccessEditor = useMemo(
     () => Boolean(selectedPlanId && isPaymentVerified(selectedPlanId)),
-    [selectedPlanId]
+    // paymentStatus dispara recomputo após markApproved (sessionStorage sozinho não re-renderiza).
+    [selectedPlanId, paymentStatus]
   );
 
   const value = useMemo(

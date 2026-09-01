@@ -7,9 +7,9 @@ import { ResumeProvider } from "@/contexts/resume-context";
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ResumeProvider>
-      <AppFlowProvider>
-        <PaymentProvider>{children}</PaymentProvider>
-      </AppFlowProvider>
+      <PaymentProvider>
+        <AppFlowProvider>{children}</AppFlowProvider>
+      </PaymentProvider>
     </ResumeProvider>
   );
 }
