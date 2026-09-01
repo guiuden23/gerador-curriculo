@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# eCurrículo Digital — Gerador de Currículos
 
-## Getting Started
+Web app (PWA) que gera currículos profissionais em PDF a partir de um formulário guiado, com **20 modelos de design** à escolha.
 
-First, run the development server:
+## Planos e pagamentos
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+| Plano | Preço | Gateway | Inclui |
+| --- | --- | --- | --- |
+| **Básico** | R$ 19,99 | Mercado Pago | Currículo em PDF (até 2 modelos) |
+| **Premium** | R$ 24,99 | Stripe | PDF + correção por IA (legado) |
+| **Carta de apresentação** | R$ 9,90 | Stripe | Upsell — carta por IA |
+
+> Para adicionar ou alterar planos, edite [`src/config/plans.ts`](src/config/plans.ts). O `PlanSelector` e as APIs de pagamento leem os valores desse arquivo automaticamente.
+
+## Arquitetura
+
+```
+src/
+├── app/              # Rotas Next.js (pages + API)
+├── components/       # UI (landing, payment, resume, layout, views)
+├── config/           # Planos e configuração do site
+├── contexts/         # Resume, fluxo da app e pagamento
+├── hooks/            # useResume, useAppFlow, usePayment, usePdfDownload
+├── lib/              # PDF, templates, integrações MP/PIX
+└── providers/        # AppProviders (compõe todos os contexts)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Funcionalidades
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Formulário multi-etapas: contato, experiências, formação e habilidades
+- **20 modelos de design** com preview em tempo real (A4)
+- Geração de PDF no cliente (`@react-pdf/renderer`) — dados não vão ao servidor
+- Pagamento via Mercado Pago Bricks (cartão) no fluxo principal
+- Stripe para upsell de carta de apresentação e plano Premium
+- Rotas PIX legadas mantidas para compatibilidade
+- PWA instalável + proxy corporativo para SDK do Mercado Pago
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Configuração
 
-## Learn More
+### 1. Instalar dependências
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+yarn install
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. Variáveis de ambiente
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Copie `.env.example` para `.env.local`:
 
-## Deploy on Vercel
+| Variável | Descrição |
+| --- | --- |
+| `NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY` | Chave pública MP (mesma aplicação do access token) |
+| `MERCADOPAGO_ACCESS_TOKEN` | Access token MP |
+| `STRIPE_SECRET_KEY` | Chave secreta Stripe (upsell / Premium) |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Chave pública Stripe |
+| `NEXT_PUBLIC_APP_URL` | URL do app (ex.: `http://localhost:3000`) |
+| `OPENAI_API_KEY` | Opcional — carta de apresentação e correção IA |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 3. Desenvolvimento
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+yarn dev
+```
+
+## Como adicionar um novo plano
+
+1. Abra [`src/config/plans.ts`](src/config/plans.ts)
+2. Adicione um objeto ao array `PLANS`:
+
+```typescript
+{
+  id: "premium",
+  name: "Premium",
+  amount: 24.99,
+  currency: "BRL",
+  reference: "curriculo-plus-premium",
+  description: "eCurrículo Digital — Plano Premium",
+  highlight: false,
+  badge: "Currículo + IA",
+  maxDownloads: 2,
+  features: [
+    { text: "Tudo do Básico" },
+    { text: "Correção por IA", highlighted: true },
+  ],
+  paymentGateway: "mercadopago", // ou "stripe" | "pix"
+  showInSelector: true,
+  successPath: "/success",
+}
+```
+
+3. O card aparece automaticamente no `PlanSelector` quando `showInSelector: true`
+4. O valor é aplicado na UI, no Brick e na API `/api/mercadopago/pay` (servidor ignora amount do cliente)
+
+## Fluxo do usuário
+
+1. Landing → escolhe plano
+2. Pagamento (Mercado Pago)
+3. Editor desbloqueado após confirmação (gate em `sessionStorage`)
+4. Escolhe layout, edita dados, baixa até 2 PDFs
+5. Upsell opcional: carta de apresentação via Stripe em `/cover-letter`
+
+## Stack
+
+- Next.js 16 (App Router, TypeScript)
+- Tailwind CSS v4
+- @react-pdf/renderer
+- Mercado Pago SDK + Stripe
+- React Context + hooks customizados
