@@ -36,3 +36,19 @@ export function mpCredentialKind(value?: string | null): string {
   if (value.startsWith("APP_USR-")) return "PRODUÇÃO";
   return `OUTRO (prefixo: ${value.slice(0, 8)})`;
 }
+
+/** Traduz códigos de cause[] da API de pagamentos (erros HTTP 4xx). */
+export function explainMpApiCause(cause: unknown): string | undefined {
+  if (!Array.isArray(cause) || cause.length === 0) return undefined;
+  const first = cause[0] as { code?: number; description?: string };
+  const byCode: Record<number, string> = {
+    10111:
+      "A conta Mercado Pago recusou o emissor do cartão (não é erro do app). Com cartão de teste correto, isso indica que a conta vendedor ainda não está habilitada para cartão — complete endereço/dados no painel MP ou teste via Pix.",
+    10113:
+      "Cartão bloqueado por regra da conta Mercado Pago. Complete endereço/dados de cobrança no painel MP e habilite pagamentos com cartão. Pix costuma funcionar mesmo nesse cenário.",
+    2006:
+      "Token do cartão não encontrado — a public key e o access token precisam ser do mesmo ambiente (ambos TEST ou ambos PRODUÇÃO).",
+  };
+  if (first.code != null && byCode[first.code]) return byCode[first.code];
+  return first.description;
+}

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { StaticPageShell } from "@/components/layout/StaticPageShell";
+import { AlertBanner } from "@/components/ui/AlertBanner";
+import { Card } from "@/components/ui/Card";
 import { loadResumeData, saveResumeData } from "@/lib/storage/resume-storage";
 import { downloadBlob, generatePdfBlob, sanitizeFilename } from "@/lib/pdf";
 import type { ResumeData } from "@/lib/types";
@@ -89,22 +91,17 @@ export function SuccessClient({
 
   if (!paid) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-        <Header />
-        <main className="mx-auto max-w-xl px-4 py-16">
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
-            Não foi possível confirmar o pagamento. Se já pagou, verifique se
-            abriu esta página pelo link do Stripe.
-          </div>
-        </main>
-      </div>
+      <StaticPageShell>
+        <AlertBanner variant="error">
+          Não foi possível confirmar o pagamento. Se já pagou, verifique se
+          abriu esta página pelo link do Stripe.
+        </AlertBanner>
+      </StaticPageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <Header />
-      <main className="mx-auto flex max-w-xl flex-col items-center px-4 py-16 text-center">
+    <StaticPageShell centered>
         <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl dark:bg-emerald-950">
           ✅
         </span>
@@ -136,10 +133,7 @@ export function SuccessClient({
             </h2>
             <div className="mt-4 space-y-4">
               {diffs.map((d, i) => (
-                <div
-                  key={i}
-                  className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
-                >
+                <Card key={i} size="md" className="text-left">
                   <p className="text-xs font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                     {d.field}
                   </p>
@@ -149,7 +143,7 @@ export function SuccessClient({
                   <p className="mt-1.5 text-sm leading-relaxed font-medium text-emerald-700 dark:text-emerald-300">
                     {d.after}
                   </p>
-                </div>
+                </Card>
               ))}
             </div>
             <Button
@@ -163,10 +157,10 @@ export function SuccessClient({
         ) : null}
 
         {isPremium && diffs !== null && diffs.length === 0 ? (
-          <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-4 text-sm font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+          <AlertBanner variant="success" className="mt-8">
             Ótima notícia: seu currículo já está com texto profissional. Nenhuma
             correção necessária.
-          </div>
+          </AlertBanner>
         ) : null}
 
         {(!isPremium || (isPremium && diffs !== null)) && (
@@ -192,29 +186,6 @@ export function SuccessClient({
         )}
 
         {(!isPremium || (isPremium && diffs !== null)) && <CoverLetterUpsell />}
-      </main>
-    </div>
-  );
-}
-
-function Header() {
-  return (
-    <header className="border-b border-purple-800 bg-purple-700">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-        <div className="flex items-center gap-2">
-          <Link
-            href="/"
-            className="flex items-center gap-2 rounded-lg transition-opacity hover:opacity-80"
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-sm font-bold text-purple-700">
-              CV
-            </span>
-            <span className="text-lg font-bold tracking-tight text-white">
-                eCurrículo <span className="text-white">Digital</span>
-            </span>
-          </Link>
-        </div>
-      </div>
-    </header>
+    </StaticPageShell>
   );
 }

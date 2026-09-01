@@ -3,6 +3,9 @@
 import { useRef, useState } from "react";
 import { useResume } from "@/hooks/use-resume";
 import { getTemplate } from "@/lib/templates";
+import { Badge } from "@/components/ui/Badge";
+import { FlowPageLayout } from "@/components/layout/FlowPageLayout";
+import { FlowPageHeader } from "@/components/layout/FlowPageHeader";
 import { TemplatePicker } from "./TemplatePicker";
 import { ResumeForm } from "./ResumeForm";
 import { ResumePreview } from "./ResumePreview";
@@ -30,34 +33,27 @@ export function BasicFlow({
   const downloadRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="mx-auto">
-      <button
-        type="button"
-        onClick={onBack}
-        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100"
-      >
-        ← Voltar aos planos
-      </button>
-
-      <div className="mb-8 text-center">
-        <div className="inline-flex flex-wrap items-center justify-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
-            Plano {planName}
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-            ✓ Design e edição desbloqueados
-          </span>
-        </div>
-        <h1 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">
-          Escolha o layout e edite seu currículo
-        </h1>
-        <p className="mx-auto mt-2 max-w-lg text-zinc-600 dark:text-zinc-400">
-          {chosen
-            ? `Modelo "${template.name}" selecionado — edite seus dados e baixe o PDF quando estiver pronto.`
-            : "Selecione um dos 20 modelos profissionais e edite seus dados para baixar."}
-        </p>
-      </div>
-
+    <FlowPageLayout
+      backLabel="Voltar aos planos"
+      onBack={onBack}
+      maxWidth="max-w-none"
+      header={
+        <FlowPageHeader
+          badges={
+            <>
+              <Badge variant="plan">Plano {planName}</Badge>
+              <Badge variant="success">✓ Design e edição desbloqueados</Badge>
+            </>
+          }
+          title="Escolha o layout e edite seu currículo"
+          description={
+            chosen
+              ? `Modelo "${template.name}" selecionado — edite seus dados e baixe o PDF quando estiver pronto.`
+              : "Selecione um dos 20 modelos profissionais e edite seus dados para baixar."
+          }
+        />
+      }
+    >
       <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <div>
           <TemplatePicker showHeader={false} onSelect={() => setChosen(true)} />
@@ -95,6 +91,6 @@ export function BasicFlow({
           onDownload={onDownload}
         />
       </div>
-    </div>
+    </FlowPageLayout>
   );
 }

@@ -5,6 +5,7 @@ import { getPlan } from "@/config/plans";
 import { useAppFlow } from "@/hooks/use-app-flow";
 import { usePdfDownload } from "@/hooks/use-pdf-download";
 import { BackButton } from "@/components/layout/BackButton";
+import { AlertBanner } from "@/components/ui/AlertBanner";
 
 const BasicFlow = dynamic(
   () => import("@/components/resume/BasicFlow").then((m) => m.BasicFlow),
@@ -30,9 +31,9 @@ export function EditorView() {
   if (!selectedPlanId || !canAccessEditor) {
     return (
       <div className="mx-auto max-w-md text-center">
-        <p className="text-lg font-semibold text-zinc-700 dark:text-zinc-200">
+        <AlertBanner variant="warning">
           Complete o pagamento para acessar o editor.
-        </p>
+        </AlertBanner>
         <div className="mt-6">
           <BackButton onClick={() => goTo("plans")} label="Ver planos" />
         </div>

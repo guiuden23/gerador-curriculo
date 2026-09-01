@@ -1,10 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { getPlan, formatPlanPrice, type PlanId } from "@/config/plans";
+import { getPlan, type PlanId } from "@/config/plans";
 import { useResume } from "@/hooks/use-resume";
 import { usePayment } from "@/hooks/use-payment";
 import { Field } from "@/components/ui/Field";
+import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
+import { AlertBanner } from "@/components/ui/AlertBanner";
+import { PlanPrice } from "@/components/ui/PlanPrice";
+import { Button } from "@/components/ui/Button";
+import { FlowPageLayout } from "@/components/layout/FlowPageLayout";
+import { FlowPageHeader } from "@/components/layout/FlowPageHeader";
 import { isValidPayerEmail } from "@/lib/mp-payer";
 import { explainMpStatusDetail } from "@/lib/mp-status-detail";
 import { PaymentStatusScreen } from "./PaymentStatusScreen";
@@ -35,12 +42,12 @@ export function PaymentView({
 
   if (!plan) {
     return (
-      <div className="mx-auto max-w-md text-center">
-        <p className="text-red-600">Plano inválido.</p>
-        <button type="button" onClick={onBack} className="mt-4 text-sm underline">
+      <FlowPageLayout maxWidth="max-w-md">
+        <AlertBanner variant="error">Plano inválido.</AlertBanner>
+        <Button variant="ghost" onClick={onBack} className="mt-4">
           Voltar
-        </button>
-      </div>
+        </Button>
+      </FlowPageLayout>
     );
   }
 
@@ -103,33 +110,24 @@ export function PaymentView({
   };
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <button
-        type="button"
-        onClick={onBack}
-        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100"
-      >
-        ← Voltar aos planos
-      </button>
-
-      <div className="mb-8 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-700 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
-          Plano {plan.name}
-        </span>
-        <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-          {status === "approved" ? "Pagamento aprovado" : "Pagamento"}
-        </h1>
-        <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-          Pagamento único de{" "}
-          <span className="font-bold text-purple-700 dark:text-purple-400">
-            {formatPlanPrice(plan.amount)}
-          </span>{" "}
-          para liberar seu currículo.
-        </p>
-      </div>
-
+    <FlowPageLayout
+      backLabel="Voltar aos planos"
+      onBack={onBack}
+      header={
+        <FlowPageHeader
+          badges={<Badge variant="plan">Plano {plan.name}</Badge>}
+          title={status === "approved" ? "Pagamento aprovado" : "Pagamento"}
+          description={
+            <>
+              Pagamento único de <PlanPrice amount={plan.amount} variant="inline" /> para
+              liberar seu currículo.
+            </>
+          }
+        />
+      }
+    >
       {status === "paying" && paymentId === null && (
-        <div className="mx-auto max-w-md rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Card className="mx-auto max-w-md">
           <Field
             label="E-mail do titular"
             type="email"
@@ -156,21 +154,18 @@ export function PaymentView({
               />
             </div>
           ) : (
-            <p className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+            <AlertBanner variant="info" className="mt-4 text-left">
               Informe um e-mail válido para liberar o formulário de cartão.
-            </p>
+            </AlertBanner>
           )}
-        </div>
+        </Card>
       )}
 
       {status === "waiting" && paymentId && (
-        <div className="mx-auto max-w-md rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="mb-4 flex items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center dark:border-amber-900 dark:bg-amber-950">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
-            <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">
-              Aguardando confirmação do pagamento...
-            </p>
-          </div>
+        <Card className="mx-auto max-w-md">
+          <AlertBanner variant="warning" pulse className="mb-4">
+            Aguardando confirmação do pagamento...
+          </AlertBanner>
           <PaymentStatusScreen
             paymentId={paymentId}
             onStatusChange={handleStatusChange}
@@ -180,59 +175,46 @@ export function PaymentView({
               setStatus("error");
             }}
           />
-        </div>
+        </Card>
       )}
 
       {status === "rejected" && (
         <div className="mx-auto max-w-md">
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center dark:border-red-900 dark:bg-red-950">
-            <p className="text-sm font-bold text-red-700 dark:text-red-300">
-              Pagamento não aprovado. Tente novamente.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={reset}
-            className="inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-purple-600 px-6 text-sm font-semibold text-white transition-colors hover:bg-purple-700"
-          >
+          <AlertBanner variant="error" className="mb-4">
+            Pagamento não aprovado. Tente novamente.
+          </AlertBanner>
+          <Button onClick={reset} className="w-full">
             Tentar novamente
-          </button>
+          </Button>
         </div>
       )}
 
       {status === "approved" && (
-        <div className="mx-auto max-w-md rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-5 text-center dark:border-emerald-900 dark:bg-emerald-950">
-          <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">
+        <AlertBanner variant="success" className="mx-auto max-w-md rounded-2xl px-6 py-5">
+          <p className="text-lg font-bold">
             Pagamento confirmado com sucesso! Agora você pode editar seu currículo e
             utilizar todos os designs disponíveis.
           </p>
-          <p className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
+          <p className="mt-1 text-sm opacity-90">
             Redirecionando para a edição do currículo...
           </p>
-        </div>
+        </AlertBanner>
       )}
 
       {status === "error" && (
-        <div className="mx-auto max-w-md rounded-2xl border border-red-200 bg-red-50 px-6 py-5 text-center dark:border-red-900 dark:bg-red-950">
-          <p className="text-lg font-bold text-red-700 dark:text-red-300">
-            Não foi possível processar o pagamento
-          </p>
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+        <div className="mx-auto max-w-md">
+          <AlertBanner variant="error" title="Não foi possível processar o pagamento" className="rounded-2xl px-6 py-5">
             {errorReason === "sdk"
               ? "O SDK do Mercado Pago não carregou (verifique a conexão ou bloqueios de rede)."
               : errorMessage
                 ? errorMessage
                 : "Ocorreu um erro ao processar o pagamento. Tente novamente em instantes."}
-          </p>
-          <button
-            type="button"
-            onClick={reset}
-            className="mt-4 inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-purple-600 px-6 text-sm font-semibold text-white transition-colors hover:bg-purple-700"
-          >
+          </AlertBanner>
+          <Button onClick={reset} className="mt-4 w-full">
             Tentar novamente
-          </button>
+          </Button>
         </div>
       )}
-    </div>
+    </FlowPageLayout>
   );
 }

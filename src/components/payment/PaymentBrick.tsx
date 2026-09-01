@@ -53,6 +53,8 @@ interface SubmitFormData {
   payment_method_id?: string;
   issuer_id?: string;
   installments?: number;
+  payment_method_option_id?: string | null;
+  processing_mode?: string | null;
   payer?: {
     email?: string;
     first_name?: string;

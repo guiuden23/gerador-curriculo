@@ -1,24 +1,5 @@
 import type { PlanFeature } from "@/config/plans";
-
-function CheckIcon() {
-  return (
-    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="h-3 w-3"
-        aria-hidden="true"
-      >
-        <path d="M20 6 9 17l-5-5" />
-      </svg>
-    </span>
-  );
-}
+import { CheckIcon } from "@/components/ui/icons";
 
 export function PlanFeatureList({ features }: { features: readonly PlanFeature[] }) {
   return (
@@ -36,7 +17,9 @@ export function PlanFeatureList({ features }: { features: readonly PlanFeature[]
             feature.text
           ) : (
             <>
-              <CheckIcon />
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">
+                <CheckIcon />
+              </span>
               {feature.text}
             </>
           )}

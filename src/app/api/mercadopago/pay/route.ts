@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Agent, fetch as undiciFetch } from "undici";
 import { getPlan } from "@/config/plans";
 import { cleanIdentification, isValidPayerEmail, splitPersonName } from "@/lib/mp-payer";
-import { explainMpStatusDetail, mpCredentialKind } from "@/lib/mp-status-detail";
+import { explainMpStatusDetail, explainMpApiCause, mpCredentialKind } from "@/lib/mp-status-detail";
 
 // Ambiente corporativo com proxy que intercepta HTTPS (certificado próprio):
 // usamos um agente que não valida a cadeia de certificados apenas para a Mercado Pago.
@@ -18,6 +18,8 @@ interface MPFormData {
   payment_method_id?: string;
   issuer_id?: string;
   installments?: number;
+  payment_method_option_id?: string | null;
+  processing_mode?: string | null;
   payer?: {
     email?: string;
     first_name?: string;
@@ -135,23 +137,34 @@ export async function POST(request: Request) {
     // URL inválida — segue sem webhook.
   }
 
+  const isTestEnv = tokenKind === "TESTE";
+
+  const cardFields = isPix
+    ? {}
+    : {
+        token: formData.token,
+        installments: Number(formData.installments ?? 1),
+        payment_type_id: "credit_card" as const,
+        ...(formData.processing_mode ? { processing_mode: formData.processing_mode } : {}),
+        ...(formData.payment_method_option_id
+          ? { payment_method_option_id: formData.payment_method_option_id }
+          : {}),
+        ...(formData.issuer_id &&
+        formData.issuer_id !== "0" &&
+        !Number.isNaN(Number(formData.issuer_id))
+          ? { issuer_id: Number(formData.issuer_id) }
+          : {}),
+      };
+
   const mpRequestBody = {
     transaction_amount: PLAN_AMOUNT,
     payment_method_id: formData.payment_method_id,
     description: PLAN_DESCRIPTION,
     external_reference: PLAN_REFERENCE,
     ...(notificationUrl ? { notification_url: notificationUrl } : {}),
-    // binary_mode só se aplica a cartão (aprovação imediata). PIX, boleto e
-    // transferência são assíncronos e permanecem em "pending" até a confirmação.
-    binary_mode: Boolean(formData?.token),
-    // Campos exclusivos de cartão — omitidos no Pix:
-    ...(isPix
-      ? {}
-      : {
-          token: formData.token,
-          installments: Number(formData.installments ?? 1),
-          issuer_id: formData.issuer_id ? Number(formData.issuer_id) : undefined,
-        }),
+    // binary_mode agressivo pode bloquear cartões de teste no sandbox.
+    binary_mode: !isTestEnv && Boolean(formData?.token),
+    ...cardFields,
     payer: {
       email: payerEmail,
       first_name: firstName,
@@ -159,6 +172,20 @@ export async function POST(request: Request) {
       identification,
     },
   };
+
+  if (!isPix) {
+    console.info("[MP cartão] Criando pagamento:", {
+      env: isTestEnv ? "TESTE" : tokenKind,
+      payment_method_id: formData.payment_method_id,
+      payment_type_id: "credit_card",
+      installments: formData.installments,
+      issuer_id: formData.issuer_id ?? "(ausente)",
+      payment_method_option_id: formData.payment_method_option_id ?? "(ausente)",
+      processing_mode: formData.processing_mode ?? "(ausente)",
+      binary_mode: !isTestEnv,
+      tokenPrefix: formData.token?.slice(0, 8),
+    });
+  }
 
   try {
     const res = await undiciFetch("https://api.mercadopago.com/v1/payments", {
@@ -198,7 +225,10 @@ export async function POST(request: Request) {
       );
       return NextResponse.json(
         {
-          error: body.message ?? "Pagamento recusado pela Mercado Pago.",
+          error:
+            explainMpApiCause(body.cause) ??
+            body.message ??
+            "Pagamento recusado pela Mercado Pago.",
           statusDetail: body.status_detail,
           mpError: body.error,
           cause: body.cause,
