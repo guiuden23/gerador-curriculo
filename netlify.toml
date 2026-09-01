@@ -5,6 +5,7 @@
 
 [build.environment]
   NODE_VERSION = "20.20.2"
+  YARN_FLAGS = "--ignore-engines"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
