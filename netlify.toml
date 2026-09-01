@@ -1,0 +1,10 @@
+# Next.js App Router + API routes exige o plugin oficial do Netlify.
+# Sem isso, o Netlify publica só arquivos estáticos e a raiz retorna 404.
+[build]
+  command = "yarn build"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
